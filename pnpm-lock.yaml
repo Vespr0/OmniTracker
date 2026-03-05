@@ -30,8 +30,8 @@ importers:
         specifier: 2.3.1
         version: 2.3.1
       typescript:
-        specifier: 4.4.4
-        version: 4.4.4
+        specifier: 5.9.3
+        version: 5.9.3
 
 packages:
 
@@ -610,9 +610,9 @@ packages:
   typedarray@0.0.6:
     resolution: {integrity: sha512-/aCDEGatGvZ2BIk+HmLf4ifCJFwvKFNb9/JeZPMulfgFracn9QFcAf5GO8B/mweUjSoblS5In0cWhqpfs/5PQA==}
 
-  typescript@4.4.4:
-    resolution: {integrity: sha512-DqGhF5IKoBl8WNf8C1gu8q0xZSInh9j1kJJMqT3a94w1JzVaBU4EXOSMrz9yDqMT0xt3selp83fuFMQ0uzv6qA==}
-    engines: {node: '>=4.2.0'}
+  typescript@5.9.3:
+    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
+    engines: {node: '>=14.17'}
     hasBin: true
 
   universalify@0.1.2:
@@ -1230,7 +1230,7 @@ snapshots:
 
   typedarray@0.0.6: {}
 
-  typescript@4.4.4: {}
+  typescript@5.9.3: {}
 
   universalify@0.1.2: {}
 
