@@ -1,6 +1,6 @@
 ```dataviewjs
 // get the time tracker plugin api instance
-let api = dv.app.plugins.plugins["simple-time-tracker"].api;
+let api = dv.app.plugins.plugins["omnitracker"].api;
 
 for(let page of dv.pages()) {
 	// load trackers in the file with the given path

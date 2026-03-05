@@ -1,9 +1,9 @@
 import {MarkdownRenderChild, Plugin, TFile} from "obsidian";
-import {defaultSettings, SimpleTimeTrackerSettings} from "./settings";
-import {SimpleTimeTrackerSettingsTab} from "./settings-tab";
+import {defaultSettings, OmniTrackerSettings} from "./settings";
+import {OmniTrackerSettingsTab} from "./settings-tab";
 import {displayTracker, Entry, formatDuration, formatTimestamp, getDuration, getDurationToday, getRunningEntry, getTotalDuration, getTotalDurationToday, isRunning, loadAllTrackers, loadTracker, orderedEntries} from "./tracker";
 
-export default class SimpleTimeTrackerPlugin extends Plugin {
+export default class OmniTrackerPlugin extends Plugin {
 
     public api = {
         // verbatim versions of the functions found in tracker.ts with the same parameters
@@ -15,14 +15,14 @@ export default class SimpleTimeTrackerPlugin extends Plugin {
         formatDuration: (totalTime: number) => formatDuration(totalTime, this.settings),
         orderedEntries: (entries: Entry[]) => orderedEntries(entries, this.settings)
     };
-    public settings: SimpleTimeTrackerSettings;
+    public settings: OmniTrackerSettings;
 
     async onload(): Promise<void> {
         await this.loadSettings();
 
-        this.addSettingTab(new SimpleTimeTrackerSettingsTab(this.app, this));
+        this.addSettingTab(new OmniTrackerSettingsTab(this.app, this));
 
-        this.registerMarkdownCodeBlockProcessor("simple-time-tracker", (s, e, i) => {
+        this.registerMarkdownCodeBlockProcessor("omnitracker", (s, e, i) => {
             e.empty();
             let component = new MarkdownRenderChild(e);
             let tracker = loadTracker(s);
@@ -46,7 +46,7 @@ export default class SimpleTimeTrackerPlugin extends Plugin {
             id: `insert`,
             name: `Insert Time Tracker`,
             editorCallback: (e, _) => {
-                e.replaceSelection("```simple-time-tracker\n```\n");
+                e.replaceSelection("```omnitracker\n```\n");
             }
         });
     }

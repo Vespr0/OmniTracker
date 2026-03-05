@@ -1,4 +1,4 @@
-export const defaultSettings: SimpleTimeTrackerSettings = {
+export const defaultSettings: OmniTrackerSettings = {
     timestampFormat: "YY-MM-DD HH:mm:ss",
     editableTimestampFormat: "YYYY-MM-DD HH:mm:ss",
     csvDelimiter: ",",
@@ -9,7 +9,7 @@ export const defaultSettings: SimpleTimeTrackerSettings = {
     useMonospacedFont: false
 };
 
-export interface SimpleTimeTrackerSettings {
+export interface OmniTrackerSettings {
 
     timestampFormat: string;
     editableTimestampFormat: string;
