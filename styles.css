@@ -1,5 +1,7 @@
 .omnitracker-container {
-    overflow-x: scroll;
+    overflow-x: auto;
+    width: 100%;
+    max-width: 100%;
 }
 
 .omnitracker-settings-image {
@@ -8,51 +10,68 @@
 }
 
 .omnitracker-btn-group {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 12px;
+    width: 100% !important;
+    margin: 15px 0 !important;
 }
 
 .omnitracker-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.omnitracker-txt {
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-    text-align: center;
-}
-
-.omnitracker-btn {
-    margin-top: 10px;
-    margin-bottom: 10px;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 44px !important;
+    height: 44px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 50% !important;
+    cursor: pointer;
 }
 
 .omnitracker-btn svg {
-    width: 32px;
-    height: 32px;
+    width: 32px !important;
+    height: 32px !important;
+}
+
+.omnitracker-input-wrapper {
+    display: flex !important;
+    justify-content: center !important;
+    width: 100% !important;
+    margin: 10px 0 !important;
+}
+
+.omnitracker-txt {
+    display: block !important;
+    text-align: center !important;
+    width: 100% !important;
+    max-width: 300px !important;
+    min-width: 200px !important;
+    border-bottom: 2px solid var(--interactive-accent) !important;
+    border-radius: 4px;
+    padding: 8px !important;
 }
 
 .omnitracker-bottom button {
-    margin: 10px 5px 10px 5px;
+    margin: 10px 5px !important;
 }
 
 .omnitracker-timers,
 .omnitracker-bottom {
-    display: flex;
-    justify-content: center;
-    text-align: center;
+    display: flex !important;
+    justify-content: center !important;
+    text-align: center !important;
+    width: 100% !important;
+    margin: 15px 0 !important;
 }
 
 .omnitracker-timers span {
-    display: block;
+    display: block !important;
 }
 
 .omnitracker-timer {
-    margin: 20px;
+    margin: 0 15px !important;
 }
 
 .omnitracker-timer-time {

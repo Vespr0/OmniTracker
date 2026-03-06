@@ -1,6 +1,6 @@
 {
     "name": "omnitracker",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "description": "Multi-purpose time trackers for your notes!",
     "main": "main.js",
     "scripts": {

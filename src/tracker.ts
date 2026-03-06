@@ -80,7 +80,6 @@ export function displayTracker(app: App, tracker: Tracker, element: HTMLElement,
     let activeEntry = runningEntry || pausedEntry;
 
     let controls = element.createDiv({ cls: "omnitracker-btn-group" });
-
     if (activeEntry) {
         // Pause/Resume button
         new ButtonComponent(controls)
@@ -117,7 +116,8 @@ export function displayTracker(app: App, tracker: Tracker, element: HTMLElement,
             }).buttonEl.addClass("omnitracker-btn");
     }
 
-    let newSegmentNameBox = new TextComponent(element)
+    let inputWrapper = element.createDiv({ cls: "omnitracker-input-wrapper" });
+    let newSegmentNameBox = new TextComponent(inputWrapper)
         .setPlaceholder("Segment name")
         .setDisabled(!!activeEntry);
     newSegmentNameBox.inputEl.addClass("omnitracker-txt");
