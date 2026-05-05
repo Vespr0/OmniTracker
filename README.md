@@ -52,9 +52,12 @@ The tracker's information is stored in the code block as JSON data. The names, s
 
 # ✨ What's New
 
-- **Pause & Resume**: You can now pause your tracking sessions and resume them later within the same segment. No more cluttering your tables with multiple "Parts"!
-- **Persistent Pause State**: The paused state is saved directly into your notes, so you can close Obsidian and pick up exactly where you left off.
-- **Improved UI**: New dedicated controls for starting, pausing, and ending segments.
+- **Improved Controls**: Consolidated redundant table row controls into sleek global buttons.
+- **Selective Tracking**: You can now select specific rows to target with global play/pause/stop controls.
+- **Artificial Time**: Introduced the ability to manually log time in minutes for segments that weren't tracked in real-time.
+- **Enhanced UI**: Visual highlights for selected rows and improved layout alignment.
+- **Pause & Resume**: You can now pause your tracking sessions and resume them later within the same segment.
+- **Persistent Pause State**: The paused state is saved directly into your notes.
 
 # 🙏 Acknowledgements
 
