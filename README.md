@@ -52,10 +52,9 @@ The tracker's information is stored in the code block as JSON data. The names, s
 
 # ✨ What's New
 
-- **Improved Controls**: Consolidated redundant table row controls into sleek global buttons.
-- **Selective Tracking**: You can now select specific rows to target with global play/pause/stop controls.
-- **Artificial Time**: Introduced the ability to manually log time in minutes for segments that weren't tracked in real-time.
-- **Enhanced UI**: Visual highlights for selected rows and improved layout alignment.
+- **Improved Controls**: Refined global buttons to easily play/pause and stop the currently active segment.
+- **Row-level Controls**: Re-added play/pause/stop buttons directly to each row for quick access without needing to select rows.
+- **Artificial Time**: Cleaned up the manual time logging UI, making it a simple toggleable input field.
 - **Pause & Resume**: You can now pause your tracking sessions and resume them later within the same segment.
 - **Persistent Pause State**: The paused state is saved directly into your notes.
 
