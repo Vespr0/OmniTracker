@@ -1,4 +1,4 @@
-import {moment, MarkdownSectionInformation, ButtonComponent, TextComponent, TFile, MarkdownRenderer, Component, MarkdownRenderChild, App} from "obsidian";
+import {moment, MarkdownSectionInformation, ButtonComponent, TextComponent, TFile, MarkdownRenderer, Component, MarkdownRenderChild, App, ToggleComponent} from "obsidian";
 import {OmniTrackerSettings} from "./settings";
 import {ConfirmModal} from "./confirm-modal";
 
@@ -14,6 +14,7 @@ export interface Entry {
     paused?: boolean;
     subEntries?: Entry[];
     collapsed?: boolean;
+    manualDuration?: number; // in milliseconds
 }
 
 export async function saveTracker(app: App, tracker: Tracker, fileName: string, section: MarkdownSectionInformation): Promise<void> {
@@ -74,53 +75,116 @@ type GetFile = () => string;
 export function displayTracker(app: App, tracker: Tracker, element: HTMLElement, getFile: GetFile, getSectionInfo: () => MarkdownSectionInformation, settings: OmniTrackerSettings, component: MarkdownRenderChild): void {
 
     element.addClass("omnitracker-container");
+
     // add start/stop controls
     let runningEntry = getRunningEntry(tracker.entries);
     let pausedEntry = getPausedEntry(tracker.entries);
     let activeEntry = runningEntry || pausedEntry;
 
-    let controls = element.createDiv({ cls: "omnitracker-btn-group" });
-    if (activeEntry) {
-        // Pause/Resume button
-        new ButtonComponent(controls)
-            .setClass("clickable-icon")
-            .setIcon(`lucide-${runningEntry ? "pause" : "play"}-circle`)
-            .setTooltip(runningEntry ? "Pause" : "Resume")
-            .onClick(async () => {
-                if (runningEntry) {
-                    pauseEntry(runningEntry);
+    // We'll track the "selected" entry for the Play/Pause button.
+    // If there is an active entry, it should act as the selected one.
+    // Otherwise, we look at the UI selection (which we'll implement in the table rows).
+    // For now, we will handle the top controls.
+
+    // Use an object to hold the currently selected entry state so it can be updated by row clicks.
+    let selectedState: { entry: Entry | null } = { entry: activeEntry };
+
+    let topSection = element.createDiv({ cls: "omnitracker-top-section" });
+
+    // 1. First Row: Play/Pause and Segmentation buttons
+    let controls = topSection.createDiv({ cls: "omnitracker-btn-group" });
+
+    let playPauseBtn = new ButtonComponent(controls)
+        .setClass("clickable-icon")
+        .setIcon(`lucide-${runningEntry ? "pause" : "play"}-circle`)
+        .setTooltip(runningEntry ? "Pause" : "Play")
+        .onClick(async () => {
+            let targetEntry = selectedState.entry || activeEntry;
+
+            if (targetEntry) {
+                let isTargetRunning = getRunningEntry(tracker.entries) === targetEntry;
+                if (isTargetRunning) {
+                    pauseEntry(targetEntry);
                 } else {
-                    resumeEntry(pausedEntry);
+                    // Make sure any other running entry is stopped first
+                    let currentlyRunning = getRunningEntry(tracker.entries);
+                    if (currentlyRunning && currentlyRunning !== targetEntry) {
+                        endRunningEntry(tracker);
+                    }
+                    resumeEntry(targetEntry);
                 }
-                await saveTracker(app, tracker, getFile(), getSectionInfo());
-            }).buttonEl.addClass("omnitracker-btn");
+            }
+            await saveTracker(app, tracker, getFile(), getSectionInfo());
+        });
+    playPauseBtn.buttonEl.addClass("omnitracker-btn");
+    // Attach an update method to the button element to update its icon when selection changes
+    (playPauseBtn.buttonEl as any).updateIcon = (entry: Entry | null) => {
+        let isRunning = entry && getRunningEntry(tracker.entries) === entry;
+        playPauseBtn.setIcon(`lucide-${isRunning ? "pause" : "play"}-circle`);
+        playPauseBtn.setTooltip(isRunning ? "Pause" : "Play");
+    };
 
-        // Stop button
-        new ButtonComponent(controls)
-            .setClass("clickable-icon")
-            .setIcon("lucide-stop-circle")
-            .setTooltip("End")
-            .onClick(async () => {
-                endRunningEntry(tracker);
-                await saveTracker(app, tracker, getFile(), getSectionInfo());
-            }).buttonEl.addClass("omnitracker-btn");
-    } else {
-        // Start button
-        new ButtonComponent(controls)
-            .setClass("clickable-icon")
-            .setIcon("lucide-play-circle")
-            .setTooltip("Start")
-            .onClick(async () => {
-                startNewEntry(tracker, newSegmentNameBox.getValue());
-                await saveTracker(app, tracker, getFile(), getSectionInfo());
-            }).buttonEl.addClass("omnitracker-btn");
-    }
+    new ButtonComponent(controls)
+        .setClass("clickable-icon")
+        .setIcon("lucide-stop-circle")
+        .setTooltip("Segmentation (Stop)")
+        .onClick(async () => {
+            let targetEntry = selectedState.entry || activeEntry;
+            if (targetEntry) {
+                endRunningEntry(tracker); // This actually ends the currently running/paused entry
+            }
+            await saveTracker(app, tracker, getFile(), getSectionInfo());
+        }).buttonEl.addClass("omnitracker-btn");
 
-    let inputWrapper = element.createDiv({ cls: "omnitracker-input-wrapper" });
+
+    // 2. Second Row: Input for New Entry and Artificial Time
+    let inputWrapper = topSection.createDiv({ cls: "omnitracker-input-wrapper" });
+
     let newSegmentNameBox = new TextComponent(inputWrapper)
-        .setPlaceholder("Segment name")
-        .setDisabled(!!activeEntry);
+        .setPlaceholder("Segment name");
     newSegmentNameBox.inputEl.addClass("omnitracker-txt");
+
+    let artificialOptions = inputWrapper.createDiv({ cls: "omnitracker-artificial-options", attr: { style: "display: flex; align-items: center; margin-left: 10px; gap: 5px;" } });
+
+    let artificialCheckboxDiv = artificialOptions.createDiv({ cls: "omnitracker-artificial-checkbox", attr: { style: "display: flex; align-items: center; gap: 5px;" } });
+    artificialCheckboxDiv.createEl("span", { text: "Artificial Time" });
+    let isArtificial = false;
+    let artificialCheckbox = new ToggleComponent(artificialCheckboxDiv)
+        .setValue(isArtificial)
+        .onChange(value => {
+            isArtificial = value;
+            minutesBox.inputEl.style.display = value ? "block" : "none";
+        });
+
+    let minutesBox = new TextComponent(artificialOptions)
+        .setPlaceholder("Minutes");
+    minutesBox.inputEl.type = "number";
+    minutesBox.inputEl.style.display = "none";
+    minutesBox.inputEl.style.width = "80px";
+
+    new ButtonComponent(inputWrapper)
+        .setButtonText("New Entry")
+        .onClick(async () => {
+            // End current running entry if there is one
+            let currentlyRunning = getRunningEntry(tracker.entries);
+            if (currentlyRunning) {
+                endRunningEntry(tracker);
+            }
+
+            if (isArtificial) {
+                let minutes = parseFloat(minutesBox.getValue());
+                if (!isNaN(minutes) && minutes > 0) {
+                    addManualEntry(tracker, newSegmentNameBox.getValue(), minutes);
+                }
+            } else {
+                startNewEntry(tracker, newSegmentNameBox.getValue());
+            }
+            await saveTracker(app, tracker, getFile(), getSectionInfo());
+        }).buttonEl.style.marginLeft = "10px";
+
+    // Expose selectedState to be used by the table rows
+    (element as any).selectedState = selectedState;
+    (element as any).playPauseBtn = playPauseBtn;
 
     // add timers
     let timeStyle: DomElementInfo = {
@@ -155,7 +219,7 @@ export function displayTracker(app: App, tracker: Tracker, element: HTMLElement,
             createEl("th"));
 
         for (let entry of orderedEntries(tracker.entries, settings))
-            addEditableTableRow(app, tracker, entry, table, newSegmentNameBox, !!runningEntry, getFile, getSectionInfo, settings, 0, component);
+            addEditableTableRow(app, tracker, entry, table, newSegmentNameBox, !!runningEntry, getFile, getSectionInfo, settings, 0, component, element);
 
         // add copy buttons
         let buttons = element.createEl("div", { cls: "omnitracker-bottom" });
@@ -180,7 +244,9 @@ export function displayTracker(app: App, tracker: Tracker, element: HTMLElement,
 }
 
 export function getDuration(entry: Entry): number {
-    if (entry.subEntries) {
+    if (entry.manualDuration !== undefined) {
+        return entry.manualDuration;
+    } else if (entry.subEntries) {
         return getTotalDuration(entry.subEntries);
     } else if (entry.intervals && entry.intervals.length > 0) {
         let total = 0;
@@ -199,7 +265,19 @@ export function getDuration(entry: Entry): number {
 }
 
 export function getDurationToday(entry: Entry): number {
-    if (entry.subEntries) {
+    if (entry.manualDuration !== undefined) {
+        // If it's a manual duration and we have a start time, check if it's today
+        if (entry.startTime) {
+            let today = moment().startOf("day");
+            let startTime = moment(entry.startTime);
+            if (startTime.isSameOrAfter(today)) {
+                return entry.manualDuration;
+            } else {
+                return 0;
+            }
+        }
+        return entry.manualDuration;
+    } else if (entry.subEntries) {
         return getTotalDurationToday(entry.subEntries);
     } else if (entry.intervals && entry.intervals.length > 0) {
         let today = moment().startOf("day");
@@ -369,6 +447,20 @@ function startNewEntry(tracker: Tracker, name: string): void {
     tracker.entries.push(entry);
 }
 
+function addManualEntry(tracker: Tracker, name: string, minutes: number): void {
+    if (!name)
+        name = `Segment ${tracker.entries.length + 1}`;
+    let now = moment().toISOString();
+    let entry: Entry = {
+        name: name,
+        startTime: now,
+        endTime: now,
+        manualDuration: minutes * 60 * 1000,
+        subEntries: undefined
+    };
+    tracker.entries.push(entry);
+}
+
 function pauseEntry(entry: Entry): void {
     if (entry.intervals && entry.intervals.length > 0) {
         let last = entry.intervals[entry.intervals.length - 1];
@@ -495,17 +587,44 @@ function createTableSection(entry: Entry, settings: OmniTrackerSettings, indent:
     return ret;
 }
 
-function addEditableTableRow(app: App, tracker: Tracker, entry: Entry, table: HTMLTableElement, newSegmentNameBox: TextComponent, trackerRunning: boolean, getFile: GetFile, getSectionInfo: () => MarkdownSectionInformation, settings: OmniTrackerSettings, indent: number, component: MarkdownRenderChild): void {
+function addEditableTableRow(app: App, tracker: Tracker, entry: Entry, table: HTMLTableElement, newSegmentNameBox: TextComponent, trackerRunning: boolean, getFile: GetFile, getSectionInfo: () => MarkdownSectionInformation, settings: OmniTrackerSettings, indent: number, component: MarkdownRenderChild, containerElement: HTMLElement): void {
     let entryRunning = getRunningEntry(tracker.entries) == entry;
-    let entryPaused = entry.paused;
-    let entryActive = entryRunning || entryPaused;
     let row = table.createEl("tr");
+
+    // Retrieve selectedState from containerElement
+    let selectedState = (containerElement as any).selectedState;
+    let playPauseBtn = (containerElement as any).playPauseBtn;
+
+    // Set styling if selected
+    if (selectedState && selectedState.entry === entry) {
+        row.addClass("omnitracker-selected-row");
+    }
+
+    row.addEventListener("click", (e) => {
+        // Prevent click if editing
+        if (nameField.editing()) return;
+        // Don't select if they clicked a button inside the row
+        if ((e.target as HTMLElement).closest("button") || (e.target as HTMLElement).closest("input")) return;
+
+        if (selectedState) {
+            // Unselect previous
+            let prevSelectedRows = table.querySelectorAll(".omnitracker-selected-row");
+            prevSelectedRows.forEach(r => r.removeClass("omnitracker-selected-row"));
+
+            selectedState.entry = entry;
+            row.addClass("omnitracker-selected-row");
+
+            if (playPauseBtn && playPauseBtn.buttonEl.updateIcon) {
+                playPauseBtn.buttonEl.updateIcon(entry);
+            }
+        }
+    });
 
     let nameField = new EditableField(row, indent, entry.name);
     let startField = new EditableTimestampField(row, (entry.startTime), settings);
     let endField = new EditableTimestampField(row, (entry.endTime), settings);
 
-    row.createEl("td", { text: entry.endTime || entry.subEntries ? formatDuration(getDuration(entry), settings) : "" });
+    row.createEl("td", { text: (entry.endTime || entry.subEntries || entry.manualDuration !== undefined) ? formatDuration(getDuration(entry), settings) : "" });
 
     renderNameAsMarkdown(app, nameField.label, getFile, component);
 
@@ -526,49 +645,6 @@ function addEditableTableRow(app: App, tracker: Tracker, entry: Entry, table: HT
 
     let entryButtons = row.createEl("td");
     entryButtons.addClass("omnitracker-table-buttons");
-
-    if (entryActive) {
-        // Pause/Resume button
-        new ButtonComponent(entryButtons)
-            .setClass("clickable-icon")
-            .setIcon(`lucide-${entryRunning ? "pause" : "play"}`)
-            .setTooltip(entryRunning ? "Pause" : "Resume")
-            .onClick(async () => {
-                if (entryRunning) {
-                    pauseEntry(entry);
-                } else {
-                    resumeEntry(entry);
-                }
-                await saveTracker(app, tracker, getFile(), getSectionInfo());
-            });
-
-        // Stop button
-        new ButtonComponent(entryButtons)
-            .setClass("clickable-icon")
-            .setIcon("lucide-square")
-            .setTooltip("End")
-            .onClick(async () => {
-                endRunningEntry(tracker);
-                await saveTracker(app, tracker, getFile(), getSectionInfo());
-            });
-    } else {
-        new ButtonComponent(entryButtons)
-            .setClass("clickable-icon")
-            .setIcon("lucide-play")
-            .setTooltip("Continue")
-            .setDisabled(trackerRunning && !entryRunning)
-            .onClick(async () => {
-                if (!entry.subEntries && !entry.startTime) {
-                    // if we're using a template version of a tracker without a start time, start now
-                    let now = moment().toISOString();
-                    entry.startTime = now;
-                    entry.intervals = [{ startTime: now, endTime: null }];
-                } else {
-                    resumeEntry(entry);
-                }
-                await saveTracker(app, tracker, getFile(), getSectionInfo());
-            });
-    }
 
     let editButton = new ButtonComponent(entryButtons)
         .setClass("clickable-icon")
@@ -598,7 +674,7 @@ function addEditableTableRow(app: App, tracker: Tracker, entry: Entry, table: HT
         expandButton.buttonEl.style.display = null;
         startField.endEdit();
         entry.startTime = startField.getTimestamp();
-        if (!entryActive) {
+        if (!entryRunning && !entry.paused) {
             endField.endEdit();
             entry.endTime = endField.getTimestamp();
         }
@@ -653,7 +729,7 @@ function addEditableTableRow(app: App, tracker: Tracker, entry: Entry, table: HT
 
     if (entry.subEntries && !entry.collapsed) {
         for (let sub of orderedEntries(entry.subEntries, settings))
-            addEditableTableRow(app, tracker, sub, table, newSegmentNameBox, trackerRunning, getFile, getSectionInfo, settings, indent + 1, component);
+            addEditableTableRow(app, tracker, sub, table, newSegmentNameBox, trackerRunning, getFile, getSectionInfo, settings, indent + 1, component, containerElement);
     }
 }
 

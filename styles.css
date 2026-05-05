@@ -111,3 +111,28 @@
 .omnitracker-table tr:hover {
     background-color: var(--background-modifier-hover);
 }
+
+.omnitracker-table tr.omnitracker-selected-row {
+    background-color: var(--background-modifier-active-hover);
+}
+
+.omnitracker-top-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.omnitracker-artificial-options {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: 15px;
+}
+
+.omnitracker-artificial-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: var(--font-ui-small);
+}
