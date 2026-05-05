@@ -602,47 +602,49 @@ function addEditableTableRow(app: App, tracker: Tracker, entry: Entry, table: HT
     let entryButtons = row.createEl("td");
     entryButtons.addClass("omnitracker-table-buttons");
 
-    // Add per-row play/pause/stop buttons
-    let isThisRunning = getRunningEntry(tracker.entries) === entry;
-    let isThisPaused = entry.paused;
-    let isThisActive = isThisRunning || isThisPaused;
+    // Add per-row play/pause/stop buttons if it's not a manual entry
+    if (entry.manualDuration === undefined) {
+        let isThisRunning = getRunningEntry(tracker.entries) === entry;
+        let isThisPaused = entry.paused;
+        let isThisActive = isThisRunning || isThisPaused;
 
-    new ButtonComponent(entryButtons)
-        .setClass("clickable-icon")
-        .setIcon(`lucide-${isThisRunning ? "pause" : "play"}-circle`)
-        .setTooltip(isThisRunning ? "Pause" : (isThisPaused ? "Resume" : "Start"))
-        .onClick(async () => {
-            if (isThisRunning) {
-                pauseEntry(entry);
-            } else {
-                let currentlyRunning = getRunningEntry(tracker.entries);
-                if (currentlyRunning && currentlyRunning !== entry) {
-                    endRunningEntry(tracker);
-                }
-                resumeEntry(entry);
-            }
-            await saveTracker(app, tracker, getFile(), getSectionInfo());
-        });
-
-    new ButtonComponent(entryButtons)
-        .setClass("clickable-icon")
-        .setIcon("lucide-stop-circle")
-        .setTooltip("End Segment")
-        .setDisabled(!isThisActive)
-        .onClick(async () => {
-            if (isThisActive) {
-                let now = moment().toISOString();
-                if (entry.intervals && entry.intervals.length > 0) {
-                    let last = entry.intervals[entry.intervals.length - 1];
-                    if (!last.endTime) {
-                        last.endTime = now;
+        new ButtonComponent(entryButtons)
+            .setClass("clickable-icon")
+            .setIcon(`lucide-${isThisRunning ? "pause" : "play"}-circle`)
+            .setTooltip(isThisRunning ? "Pause" : (isThisPaused ? "Resume" : "Start"))
+            .onClick(async () => {
+                if (isThisRunning) {
+                    pauseEntry(entry);
+                } else {
+                    let currentlyRunning = getRunningEntry(tracker.entries);
+                    if (currentlyRunning && currentlyRunning !== entry) {
+                        endRunningEntry(tracker);
                     }
+                    resumeEntry(entry);
                 }
-                entry.endTime = now;
-                entry.paused = false;
                 await saveTracker(app, tracker, getFile(), getSectionInfo());
-            }
-        });
+            });
+
+        new ButtonComponent(entryButtons)
+            .setClass("clickable-icon")
+            .setIcon("lucide-stop-circle")
+            .setTooltip("End Segment")
+            .setDisabled(!isThisActive)
+            .onClick(async () => {
+                if (isThisActive) {
+                    let now = moment().toISOString();
+                    if (entry.intervals && entry.intervals.length > 0) {
+                        let last = entry.intervals[entry.intervals.length - 1];
+                        if (!last.endTime) {
+                            last.endTime = now;
+                        }
+                    }
+                    entry.endTime = now;
+                    entry.paused = false;
+                    await saveTracker(app, tracker, getFile(), getSectionInfo());
+                }
+            });
+    }
 
     let editButton = new ButtonComponent(entryButtons)
         .setClass("clickable-icon")
